@@ -1,6 +1,6 @@
 import sys, json
 import logging as log
-from collections import defaultdict 
+from collections import defaultdict
 
 import config
 from performer_calculator import *
@@ -11,10 +11,19 @@ try:
     from stashapi.stashapp import StashInterface
     from stashapi.stash_types import OnMultipleMatch
 except ModuleNotFoundError:
-    print("You need to install stashapp-tools. (https://pypi.org/project/stashapp-tools/)", file=sys.stderr)
-    print("If you have pip (normally installed with python), run this command in a terminal (cmd): 'pip install stashapp-tools'", file=sys.stderr)
+    print(
+        "You need to install stashapp-tools. (https://pypi.org/project/stashapp-tools/)",
+        file=sys.stderr,
+    )
+    print(
+        "If you have pip (normally installed with python), run this command in a terminal (cmd): 'pip install stashapp-tools'",
+        file=sys.stderr,
+    )
     sys.exit()
-log.basicConfig(format="%(message)s", handlers=[StashLogHandler()], level=config.log_level)
+log.basicConfig(
+    format="%(message)s", handlers=[StashLogHandler()], level=config.log_level
+)
+
 
 def main(stash_in=None, mode_in=None):
     global stash
@@ -25,17 +34,27 @@ def main(stash_in=None, mode_in=None):
     else:
         fragment = json.loads(sys.stdin.read())
         stash = StashInterface(fragment["server_connection"])
-        mode = fragment['args']['mode']
+        mode = fragment["args"]["mode"]
 
     if mode == "run_calculator":
         run_calculator()
     if mode == "destroy_managed_tags":
         destroy_managed_tags()
 
+
 def destroy_managed_tags():
-    tags = stash.find_tags(f={"description":{"value": "^\\[Managed By: PBC Plugin\\]","modifier": "MATCHES_REGEX"}}, fragment="id")
+    tags = stash.find_tags(
+        f={
+            "description": {
+                "value": "^\\[Managed By: PBC Plugin\\]",
+                "modifier": "MATCHES_REGEX",
+            }
+        },
+        fragment="id",
+    )
     log.info(f"Deleting {len(tags)} tags...")
     stash.destroy_tags([t["id"] for t in tags])
+
 
 def run_calculator():
 
@@ -48,19 +67,18 @@ def run_calculator():
 
     # get performers with measurements
     performers = stash.find_performers(fragment=PERFORMER_FRAGMENT)
-    
+
     log.info("Removing existing plugin tags...")
-    stash.update_performers({
-        "ids": [p["id"] for p in performers],
-        "tag_ids":{
-            "ids": all_tag_ids,
-            "mode": "REMOVE"
+    stash.update_performers(
+        {
+            "ids": [p["id"] for p in performers],
+            "tag_ids": {"ids": all_tag_ids, "mode": "REMOVE"},
         }
-    })
+    )
 
     log.info("Parsing Performers...")
     for p in performers:
-        if p.get("gender") != 'FEMALE':
+        if p.get("gender") != "FEMALE":
             continue
 
         p_id = f"{p['name']} ({p['id']})"
@@ -81,20 +99,19 @@ def run_calculator():
         if not performer_ids:
             continue
         log.info(f"Adding {enum} tag to {len(performer_ids)} performer(s)...")
-        stash.update_performers({
-            "ids": performer_ids,
-            "tag_ids":{
-                "ids": [enum.tag_id],
-                "mode": "ADD"
-            }
-        })
+        stash.update_performers(
+            {"ids": performer_ids, "tag_ids": {"ids": [enum.tag_id], "mode": "ADD"}}
+        )
+
 
 def enumtag_stash_init(enum_class, tag_id_list=[]):
     for enum in enum_class:
         if not isinstance(enum, config.TAGS_TO_USE):
             continue
         tag_alias_id = f"PBC:{enum}"
-        stash_tag = stash.find_tag(tag_alias_id, on_multiple=OnMultipleMatch.RETURN_NONE)
+        stash_tag = stash.find_tag(
+            tag_alias_id, on_multiple=OnMultipleMatch.RETURN_NONE
+        )
         if stash_tag:
             enum.tag_id = stash_tag["id"]
         else:
@@ -104,5 +121,5 @@ def enumtag_stash_init(enum_class, tag_id_list=[]):
     return tag_id_list
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
