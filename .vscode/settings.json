@@ -1,5 +1,4 @@
 {
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "yaml.validate": true,
   "yaml.disableAdditionalProperties": true,
   "yaml.completion": true,
