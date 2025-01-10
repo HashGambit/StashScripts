@@ -1,11 +1,10 @@
-# How to add to Stash
+# HashGambit's Stash Scripts repository
 
-go to Settings > Plugins > Available Plugins > Add Source
+This repository contains plugins, themes, userscripts and other utility scripts created by me or forked from other users.
 
-Source URL
-```
-https://hashgambit.github.io/StashScripts/stable/index.yml
-```
+The community StashScript repo can be found [on their github site](https://github.com/stashapp/CommunityScripts).
+
+More extensive list of plugins and other projects for Stash is available [on the stashapp documentation site](https://docs.stashapp.cc/plugins).
 
 ## Plugins
 
