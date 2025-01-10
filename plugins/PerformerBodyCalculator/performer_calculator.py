@@ -1,15 +1,16 @@
 import re, sys
+import logging as log
 
 import config
 from body_tags import *
 
 try:
-    import stashapi.log as log
-    log.LEVEL = config.log_level
+    from stashapi.log import StashLogHandler
 except ModuleNotFoundError:
     print("You need to install stashapp-tools. (https://pypi.org/project/stashapp-tools/)", file=sys.stderr)
     print("If you have pip (normally installed with python), run this command in a terminal (cmd): 'pip install stashapp-tools'", file=sys.stderr)
     sys.exit()
+log.basicConfig(format="%(message)s", handlers=[StashLogHandler()], level=config.log_level)
 
 class DebugException(Exception):
     pass
@@ -21,7 +22,7 @@ class ErrorException(Exception):
 CM_TO_INCH = 2.54
 PERFORMER_FRAGMENT = """
 id
-name
+name 
 measurements
 weight
 height_cm
@@ -63,7 +64,7 @@ class StashPerformer:
 
         self.match_body_shapes()
         self.set_type_descriptor()
-
+         
     def parse_measurements(self):
         if self.weight:
             self.weight = float(self.weight)
@@ -73,25 +74,26 @@ class StashPerformer:
         self.measurements = self.measurements.replace(" ", "")
 
         if self.measurements == "":
-            log.debug(f"No measurements found for {str(self)}")
+            log.warning(f"No measurements found for {str(self)}")
             return
 
         # Full Measurements | Band, Cup Size, Waist, Hips | Example: "32D-28-34"
-        band_cup_waist_hips = re.match(r'^(?P<band>\d+)(?P<cupsize>[a-zA-Z]+)\-(?P<waist>\d+)\-(?P<hips>\d+)$', self.measurements)
-        if band_cup_waist_hips:
+        if band_cup_waist_hips := re.match(r'^(?P<band>\d+)(?P<cupsize>[a-zA-Z]+)\-(?P<waist>\d+)\-(?P<hips>\d+)$', self.measurements):
             m = band_cup_waist_hips.groupdict()
+
+        # Fashion Measurements | Bust, Waist, Hips | Example: "36-28-34"
+        elif bust_waist_hips := re.match(r'^(?P<bust>\d+)\-(?P<waist>\d+)\-(?P<hips>\d+)$', self.measurements):
+            m = bust_waist_hips.groupdict()
+
+        # Bra Measurements | Band, Cup Size | Example: "32D", "32D (81D)", "32D-??-??"
+        elif band_cup := re.match(r'^(?P<band>\d+)(?P<cupsize>[a-zA-Z]+)', self.measurements):
+            m = band_cup.groupdict()
+
+        # Error cant parse given measurements
         else:
-            # Fashion Measurements | Bust, Waist, Hips | Example: "36-28-34"
-            bust_waist_hips = re.match(r'^(?P<bust>\d+)\-(?P<waist>\d+)\-(?P<hips>\d+)$', self.measurements)
-            if bust_waist_hips:
-                m = bust_waist_hips.groupdict()
-            else:
-                # Bra Measurements | Band, Cup Size | Example: "32D" or "32D (81D)"
-                band_cup = re.match(r'^(?P<band>\d+)(?P<cupsize>[a-zA-Z]+)(?: ?\(\d+[a-zA-Z]+\))?$', self.measurements)
-                if band_cup:
-                    m = band_cup.groupdict()
-                else:
-                    raise WarningException(f"could not parse measurements: '{self.measurements}'")
+            self.tags_list.append(PBCError.BAD_MEASUREMENTS)
+            log.warning(f"could not parse measurements: '{self.measurements}'")
+            return
 
         if m.get("cupsize"):
             self.cupsize = m.get("cupsize", "").upper()
@@ -133,11 +135,11 @@ class StashPerformer:
         for body_shape in self.body_shapes:
             self.tags_list.append(body_shape)
         if not self.body_shapes:
-            p_id = f"{self.name} ({self.id})"
             if not self.bust or not self.waist or not self.hips:
-                log.debug(f"{p_id:>30}: could not classify bodyshape, missing required measurements")
+                log.debug(f"{self}: could not classify bodyshape, missing required measurements")
             else:
-                log.warning(f"{p_id:>30}: could not classify bodyshape bust={self.bust:.0f} waist={self.waist:.0f} hips={self.hips:.0f}")
+                log.warning(f"{self}: could not classify bodyshape bust={self.bust:.0f} waist={self.waist:.0f} hips={self.hips:.0f}")
+                self.tags_list.append(PBCError.NO_BODYSHAPE_MATCH)
 
     def set_type_descriptor(self):
         descriptor = None
@@ -164,7 +166,9 @@ class StashPerformer:
             self.tags_list.append(breast_cup)
 
     def set_hip_size(self):
-        if hip_size := calculate_hip_size(self):
+        if not self.waist or not self.hips:
+            return None
+        if hip_size := HipSize.match_threshold((self.waist/self.hips)):
             self.tags_list.append(hip_size)
 
     def set_butt_size(self):
@@ -172,14 +176,11 @@ class StashPerformer:
             return
         if butt_size := ButtSize.match_threshold(self.hips):
             self.tags_list.append(butt_size)
-
+    
     def set_height_type(self):
         # only tuned on female heights
         if not self.height_cm or self.gender != 'FEMALE':
             return
-#        if self.height_cm > 160 and self.height_cm < 180:
-#            height_type = HeightType.AVERAGE
-#        else:
         height_type = HeightType.match_threshold(self.height_cm)
         if height_type:
             self.tags_list.append(height_type)
@@ -192,10 +193,8 @@ class StashPerformer:
         for tag_enum in self.tags_list:
             tag_updates[tag_enum].append(self.id)
 
-    def __str__(self) -> str:
-        descriptor = "N/A"
-        p_id = f"{self.name} ({self.id})"
-        p_str = f"{p_id:>25}"
+    def str_details(self) -> str:
+        p_str = str(self)
         if self.band and self.cupsize:
             p_str += f" {self.band:.0f}{self.cupsize}"
         elif self.bust:
@@ -204,6 +203,8 @@ class StashPerformer:
             p_str += f"-{self.waist:.0f}-{self.hips:.0f}"
         p_str += f" {self.bmi:5.2f}bmi"
         return p_str
+    def __str__(self) -> str:
+        return f"{self.name} ({self.id})"
     def __repr__(self) -> str:
         return str(self)
 
