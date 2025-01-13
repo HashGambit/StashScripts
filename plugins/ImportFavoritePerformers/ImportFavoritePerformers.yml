@@ -1,16 +1,13 @@
 name: Import Favorite Performers
 description: Import Favorite Performers from StashDb.
-version: 0.1
+version: 0.1.0
 url: https://github.com/HashGambit/StashScripts
 exec:
   - python
-  - "{pluginDir}/ImportFavoritePerformers.py"
+  - "{pluginDir}/importFavoritePerformers.py"
 interface: raw
 tasks:
-  - name: Import Performers
+  - name: Run Import
     description: Import Favorite Performers from StashDb.
-settings:
-  StashDb Api Key:
-      displayName: StashDb Api Key
-      description: Set your api key for connecting to StashDb.
-      type: STRING
+    defaultArgs:
+      mode: run_import
