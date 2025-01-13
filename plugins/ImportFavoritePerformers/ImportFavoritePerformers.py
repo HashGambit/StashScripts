@@ -1,6 +1,5 @@
 import requests
 import json
-import os
 import sys
 import stashapi.log as log
 
@@ -68,9 +67,9 @@ def query_stashdb_performers():
         query QueryPerformers ($page: Int!, $per_page: Int!) {
             queryPerformers(
                 input: {
-                    is_favorite: true, 
+                    is_favorite: true,
                     per_page: $per_page,
-                    page: $page 
+                    page: $page
                 }
             ) {
                 count
