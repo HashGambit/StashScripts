@@ -145,10 +145,15 @@ def clean_aliases(name, aliases):
 def calc_measurements(measurements):
     if measurements is None:
         return ""
-    if measurements["band_size"] and measurements["cup_size"] and measurements["waist"] and measurements["hip"]:
-        return f"{measurements["band_size"]}{measurements["cup_size"]}-{measurements["waist"]}-{measurements["hip"]}"
+    if (
+        measurements["band_size"]
+        and measurements["cup_size"]
+        and measurements["waist"]
+        and measurements["hip"]
+    ):
+        return f"{measurements['band_size']}{measurements['cup_size']}-{measurements['waist']}-{measurements['hip']}"
     if measurements["band_size"] and measurements["cup_size"]:
-        return f"{measurements["band_size"]}{measurements["cup_size"]}"
+        return f"{measurements['band_size']}{measurements['cup_size']}"
     return ""
 
 
