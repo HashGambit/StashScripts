@@ -4,7 +4,7 @@ version: 0.1.0
 url: https://github.com/HashGambit/StashScripts
 exec:
   - python
-  - "{pluginDir}/importFavoritePerformers.py"
+  - "{pluginDir}/ImportFavoritePerformers.py"
 interface: raw
 tasks:
   - name: Run Import
