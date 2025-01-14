@@ -1,4 +1,4 @@
-from body_tags import *
+from BodyTags import *
 
 # Log level will skip logging lower levels
 log_level = "INFO"

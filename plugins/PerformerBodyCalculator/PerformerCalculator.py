@@ -2,7 +2,7 @@ import re, sys
 import logging as log
 
 import config
-from body_tags import *
+from BodyTags import *
 
 try:
     from stashapi.log import StashLogHandler

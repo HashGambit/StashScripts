@@ -3,8 +3,8 @@ import logging as log
 from collections import defaultdict
 
 import config
-from performer_calculator import *
-from body_tags import *
+from PerformerCalculator import *
+from BodyTags import *
 
 try:
     from stashapi.log import StashLogHandler
