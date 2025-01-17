@@ -1,0 +1,24 @@
+name: Performer StashBox Scape
+description: Scrape performer metadata from configured StashBoxes
+url: https://github.com/HashGambit/StashScripts
+version: 0.1.1
+exec:
+  - python
+  - "{pluginDir}/PerformerStashBoxScape.py"
+interface: raw
+hooks:
+  - name: "Scrape New Performer"
+    description: Scrapes matched name performer against StashDB and ThePornDB.
+    triggeredBy:
+      - Performer.Create.Post
+    defaultArgs:
+      mode: createHook
+tasks:
+  - name: Get missing metadata
+    description: Scrape performer metadata from configured StashBoxes for performers without StashIds
+    defaultArgs:
+      mode: processMissingPerformers
+  - name: Update all performers
+    description: Scrape performer metadata from configured StashBoxes for all performers
+    defaultArgs:
+      mode: processAllPerformers
