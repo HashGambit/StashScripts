@@ -1,0 +1,12 @@
+{
+  "name": "stash-scripts",
+  "description": "This repository contains plugin and utility scripts created by the Stash community and hosted on the official GitHub repo.",
+  "license": "MIT",
+  "scripts": {
+    "format": "prettier --write .",
+    "format-py": "black --exclude=\"3rd party\" ."
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5"
+  }
+}
